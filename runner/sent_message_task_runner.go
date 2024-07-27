@@ -50,5 +50,6 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 
 // Stop implements Runner.
 func (s *SentMessageTaskRunner) Stop() error {
-	panic("unimplemented")
+	s.cron.Stop()
+	return nil
 }
