@@ -1,5 +1,5 @@
 swagger: 
-	swag init -g ../cmd/api/main.go -d handler -o ./cmd/api/docs
+	swag init --parseDependency --parseInternal --parseDepth 2 -g ../cmd/api/main.go -d handler -o ./cmd/api/docs
 
 run:
 	make swagger & go run cmd/api/main.go
