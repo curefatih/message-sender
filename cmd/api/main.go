@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/handler"
 	"github.com/curefatih/message-sender/runner"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -23,7 +22,7 @@ func main() {
 	r := runner.NewSentMessageTaskRunner(ctx, cfg, messageTaskRepository, taskStateRepository)
 	r.Run(ctx)
 
-	router := gin.Default()
+	router := gin.New()
 
 	if err := handler.Setup(
 		ctx,
@@ -32,7 +31,7 @@ func main() {
 		messageTaskRepository,
 		taskStateRepository,
 	).Run(); err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 		r.Stop()
 		return
 	}
@@ -45,7 +44,7 @@ func readConfig() *viper.Viper {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
-		log.Fatal(fmt.Errorf("fatal error config file: %w", err))
+		log.Fatal().Msgf("fatal error config file: %w", err)
 	}
 	return viper.GetViper()
 }

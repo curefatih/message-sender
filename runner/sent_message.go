@@ -11,6 +11,7 @@ import (
 
 	"github.com/curefatih/message-sender/model"
 	"github.com/curefatih/message-sender/model/dto"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -20,7 +21,7 @@ func runMessageTask(ctx context.Context, cfg *viper.Viper, messageTask model.Mes
 		To:             messageTask.To,
 	})
 	if err != nil {
-		fmt.Printf("Error marshaling struct to JSON: %v\n", err)
+		log.Info().Msgf("Error marshaling struct to JSON: %v\n", err)
 		return err
 	}
 
@@ -62,6 +63,6 @@ func runMessageTask(ctx context.Context, cfg *viper.Viper, messageTask model.Mes
 		return fmt.Errorf("non-200 status code: %d, body: %s", resp.StatusCode, body)
 	}
 
-	fmt.Printf("response: OK for task %d\n", messageTask.ID)
+	log.Info().Msgf("response: OK for task %d\n", messageTask.ID)
 	return nil
 }

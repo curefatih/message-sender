@@ -3,13 +3,13 @@ package runner
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/model"
 	"github.com/robfig/cron/v3"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
 )
@@ -43,7 +43,7 @@ var _ Runner = &SentMessageTaskRunner{}
 // Run implements Runner.
 func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 	_, err := s.cron.AddFunc(s.cfg.GetString("process.task.cron"), func() {
-		log.Println("running sent message task")
+		log.Info().Msg("running sent message task")
 		count := s.cfg.GetInt64("process.task.count")
 		retryCount := s.cfg.GetInt("process.task.retry")
 		deltaMin := s.cfg.GetInt64("process.task.delta_in_minutes")
@@ -51,23 +51,23 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 		taskState, err := s.taskStateRepository.GetOrCreateTaskState(ctx)
 
 		if err != nil {
-			log.Fatalln("couldn't find task state. terminating...", err)
+			log.Fatal().Msgf("couldn't find task state. terminating...", err)
 		}
 
 		if !taskState.Active {
-			log.Println("task schedule inactive. skipping...")
+			log.Info().Msg("task schedule inactive. skipping...")
 			return
 		}
 
 		if !shouldRunTask(taskState.LastSuccessfulQueryTime, deltaMin) {
-			log.Println("delta not in past. task waiting next step...")
+			log.Info().Msg("delta not in past. task waiting next step...")
 			return
 		}
 
 		tasks, err := s.messageTaskRepository.GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx, count)
 		if err != nil {
 			// we may not exit?
-			log.Fatalln("couldn't get message tasks. terminating...")
+			log.Fatal().Msg("couldn't get message tasks. terminating...")
 		}
 
 		// Create a new errgroup
@@ -80,14 +80,14 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 				if err != nil {
 					err := s.messageTaskRepository.UpdateStatus(ctx, strconv.FormatUint(uint64(task.ID), 10), model.FAILED)
 					if err != nil {
-						log.Fatalln("couldn't update message task status. terminating...")
+						log.Fatal().Msg("couldn't update message task status. terminating...")
 					}
 					return nil
 				}
 
 				err = s.messageTaskRepository.UpdateStatus(ctx, strconv.FormatUint(uint64(task.ID), 10), model.COMPLETED)
 				if err != nil {
-					log.Fatalln("couldn't update message task status. terminating...")
+					log.Fatal().Msg("couldn't update message task status. terminating...")
 				}
 
 				return nil
@@ -96,9 +96,9 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 
 		// Wait for all tasks to complete
 		if err := g.Wait(); err != nil {
-			fmt.Println("error:", err)
+			log.Info().Err(err)
 		} else {
-			fmt.Println("all tasks completed successfully")
+			log.Info().Msg("all tasks completed successfully")
 		}
 	})
 
@@ -112,7 +112,7 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 
 func invokeTask(ctx context.Context, cfg *viper.Viper, messageTask *model.MessageTask, retryCount int) error {
 	for i := 0; i <= retryCount; i++ {
-		fmt.Printf("Invoking task %d, attempt %d\n", messageTask.ID, i+1)
+		log.Info().Msgf("Invoking task %d, attempt %d\n", messageTask.ID, i+1)
 		// Simulate task invocation
 		time.Sleep(1 * time.Second) // Simulate task duration
 
@@ -128,7 +128,7 @@ func invokeTask(ctx context.Context, cfg *viper.Viper, messageTask *model.Messag
 			return ctx.Err()
 		default:
 		}
-		fmt.Printf("Task %d failed on attempt %d: %v\n", messageTask.ID, i+1, err)
+		log.Info().Msgf("Task %d failed on attempt %d: %v\n", messageTask.ID, i+1, err)
 	}
 	return fmt.Errorf("task %d failed after %d attempts", messageTask.ID, retryCount)
 }

@@ -8,7 +8,9 @@ import (
 	"github.com/curefatih/message-sender/cmd/api/docs"
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/model/dto"
+	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -22,6 +24,11 @@ func Setup(
 	taskStateRepository db.TaskStateRepository,
 ) *gin.Engine {
 	// init swagger
+	router.Use(logger.SetLogger(
+		logger.WithLogger(func(_ *gin.Context, l zerolog.Logger) zerolog.Logger {
+			return l.Output(gin.DefaultWriter).With().Logger()
+		}),
+	))
 
 	r := router.Group("/api/v1")
 	// health
