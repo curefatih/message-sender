@@ -37,8 +37,10 @@ func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param   MessageTaskCreateRequest body dto.MessageTaskCreateRequest true "Add MessageTaskCreateRequest"
-// @Success 201 {object} model.MessageTask
+// @Param   MessageTaskCreateRequest body dto.MessageTaskCreateRequest true "MessageTaskCreateRequest"
+// @Failure   400
+// @Failure   500
+// @Success 201 {object} dto.MessageTaskCreateResponse
 // @Router /api/v1/tasks/messages/ [post]
 func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 	maxContentLength := mth.cfg.GetInt("process.task.message.max_content_length")
@@ -69,9 +71,9 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 		})
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "successfully created new message task",
-		"id":      res.ID,
+	ctx.JSON(http.StatusCreated, dto.MessageTaskCreateResponse{
+		Message: "successfully created new message task",
+		ID:      res.ID,
 	})
 }
 
@@ -83,8 +85,9 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param        id   		path      int  true  "Message Task ID"
-// @Success 200 {string} OK
+// @Param			id	path	int	true	"message task id"
+// @Success 	200 {string} OK
+// @Failure   500
 // @Router /api/v1/tasks/messages/{id} [delete]
 func (mth *MessageTaskHandler) DeleteMessageTask(ctx *gin.Context) {
 
@@ -106,13 +109,15 @@ func (mth *MessageTaskHandler) DeleteMessageTask(ctx *gin.Context) {
 
 // @BasePath /api/v1
 // DeleteMessageTask godoc
-// @Summary Deletes Message Task
+// @Summary Gets message tasks with pagination
 // @Schemes
-// @Description Deletes message task that will
+// @Description Gets message tasks with pagination
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param status query  object  true  "COMPLETED"
+// @Param 	status 				query  string	true  	"status filter" Enums(COMPLETED, WAITING, PROCESSING, FAILED)
+// @Param 	page 					query  number			true  	"page"  minimum(1)
+// @Param 	page_size 		query  number  		true  	"page size" minimum(1)    maximum(20)
 // @Success 200 {object} dto.PageResponse[model.MessageTask]
 // @Router /api/v1/tasks/messages [get]
 func (mth *MessageTaskHandler) GetMessagesWithPagination(ctx *gin.Context) {
@@ -136,15 +141,15 @@ func (mth *MessageTaskHandler) GetMessagesWithPagination(ctx *gin.Context) {
 
 // @BasePath /api/v1
 // DeleteMessageTask godoc
-// @Summary Deletes Message Task
+// @Summary Gets message task result from cache
 // @Schemes
-// @Description Deletes message task that will
+// @Description Gets message task result from cache
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param status query  object  true  "COMPLETED"
-// @Success 200 {object} dto.PageResponse[model.MessageTask]
-// @Router /api/v1/tasks/messages [get]
+// @Param id path  string  true  "message id"
+// @Success 200 {object} model.MessageTaskResult
+// @Router /api/v1/tasks/messages/{id} [get]
 func (mth *MessageTaskHandler) GetMessageTaskResult(ctx *gin.Context) {
 	messageTaskID := ctx.Param("id")
 

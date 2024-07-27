@@ -6,6 +6,13 @@ definitions:
       to:
         type: string
     type: object
+  dto.MessageTaskCreateResponse:
+    properties:
+      id:
+        type: integer
+      message:
+        type: string
+    type: object
   dto.PageResponse-model_MessageTask:
     properties:
       data:
@@ -21,6 +28,13 @@ definitions:
     properties:
       active:
         type: boolean
+    type: object
+  dto.TaskStateUpdateResponse:
+    properties:
+      active:
+        type: boolean
+      message:
+        type: string
     type: object
   gorm.DeletedAt:
     properties:
@@ -45,6 +59,15 @@ definitions:
       to:
         type: string
       updatedAt:
+        type: string
+    type: object
+  model.MessageTaskResult:
+    properties:
+      messageId:
+        type: string
+      sendingTime:
+        type: string
+      taskId:
         type: string
     type: object
   model.TaskStatus:
@@ -78,9 +101,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'message": string, "active": bool}'
+          description: OK
           schema:
-            type: map
+            $ref: '#/definitions/dto.TaskStateUpdateResponse'
       summary: Updates Task State
       tags:
       - Task State
@@ -88,13 +111,31 @@ paths:
     get:
       consumes:
       - application/json
-      description: Deletes message task that will
+      description: Gets message tasks with pagination
       parameters:
-      - description: COMPLETED
+      - description: status filter
+        enum:
+        - COMPLETED
+        - WAITING
+        - PROCESSING
+        - FAILED
         in: query
         name: status
         required: true
-        type: object
+        type: string
+      - description: page
+        in: query
+        minimum: 1
+        name: page
+        required: true
+        type: number
+      - description: page size
+        in: query
+        maximum: 20
+        minimum: 1
+        name: page_size
+        required: true
+        type: number
       produces:
       - application/json
       responses:
@@ -102,7 +143,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/dto.PageResponse-model_MessageTask'
-      summary: Deletes Message Task
+      summary: Gets message tasks with pagination
       tags:
       - Message Task
   /api/v1/tasks/messages/:
@@ -111,7 +152,7 @@ paths:
       - application/json
       description: Creates new message task that will be consumed.
       parameters:
-      - description: Add MessageTaskCreateRequest
+      - description: MessageTaskCreateRequest
         in: body
         name: MessageTaskCreateRequest
         required: true
@@ -123,7 +164,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/model.MessageTask'
+            $ref: '#/definitions/dto.MessageTaskCreateResponse'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
       summary: CreatesMessageTask
       tags:
       - Message Task
@@ -133,7 +178,7 @@ paths:
       - application/json
       description: Deletes message task that will
       parameters:
-      - description: Message Task ID
+      - description: message task id
         in: path
         name: id
         required: true
@@ -145,7 +190,29 @@ paths:
           description: OK
           schema:
             type: string
+        "500":
+          description: Internal Server Error
       summary: Deletes Message Task
+      tags:
+      - Message Task
+    get:
+      consumes:
+      - application/json
+      description: Gets message task result from cache
+      parameters:
+      - description: message id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MessageTaskResult'
+      summary: Gets message task result from cache
       tags:
       - Message Task
   /health:

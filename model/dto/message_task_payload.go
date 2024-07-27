@@ -7,6 +7,11 @@ type MessageTaskCreateRequest struct {
 	To             string `json:"to"`
 }
 
+type MessageTaskCreateResponse struct {
+	ID      uint   `json:"id"`
+	Message string `json:"message"`
+}
+
 func (mtcr *MessageTaskCreateRequest) ToMessageTask() *model.MessageTask {
 	return &model.MessageTask{
 		MessageContent: mtcr.MessageContent,

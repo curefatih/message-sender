@@ -34,7 +34,7 @@ func NewTaskStateHandler(ctx context.Context, cfg *viper.Viper, repository db.Ta
 // @Accept json
 // @Produce json
 // @Param   TaskStateUpdateRequest body dto.TaskStateUpdateRequest true "Add TaskStateUpdateRequest"
-// @Success 200 {map} {"message": string, "active": bool}
+// @Success 200 {object} dto.TaskStateUpdateResponse
 // @Router /api/v1/tasks [put]
 func (tsh *TaskStateHandler) UpdateTaskState(ctx *gin.Context) {
 	var taskStateUpdateRequest dto.TaskStateUpdateRequest
@@ -55,8 +55,8 @@ func (tsh *TaskStateHandler) UpdateTaskState(ctx *gin.Context) {
 		})
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "successfully updated task state active status",
-		"active":  taskStateUpdateRequest.Active,
+	ctx.JSON(http.StatusOK, dto.TaskStateUpdateResponse{
+		Message: "successfully updated task state active status",
+		Active:  taskStateUpdateRequest.Active,
 	})
 }

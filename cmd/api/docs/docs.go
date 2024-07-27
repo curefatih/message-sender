@@ -41,9 +41,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "message\": string, \"active\": bool}",
+                        "description": "OK",
                         "schema": {
-                            "type": "map"
+                            "$ref": "#/definitions/dto.TaskStateUpdateResponse"
                         }
                     }
                 }
@@ -51,7 +51,7 @@ const docTemplate = `{
         },
         "/api/v1/tasks/messages": {
             "get": {
-                "description": "Deletes message task that will",
+                "description": "Gets message tasks with pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -61,12 +61,35 @@ const docTemplate = `{
                 "tags": [
                     "Message Task"
                 ],
-                "summary": "Deletes Message Task",
+                "summary": "Gets message tasks with pagination",
                 "parameters": [
                     {
-                        "type": "object",
-                        "description": "COMPLETED",
+                        "enum": [
+                            "COMPLETED",
+                            "WAITING",
+                            "PROCESSING",
+                            "FAILED"
+                        ],
+                        "type": "string",
+                        "description": "status filter",
                         "name": "status",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "number",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "maximum": 20,
+                        "minimum": 1,
+                        "type": "number",
+                        "description": "page size",
+                        "name": "page_size",
                         "in": "query",
                         "required": true
                     }
@@ -96,7 +119,7 @@ const docTemplate = `{
                 "summary": "CreatesMessageTask",
                 "parameters": [
                     {
-                        "description": "Add MessageTaskCreateRequest",
+                        "description": "MessageTaskCreateRequest",
                         "name": "MessageTaskCreateRequest",
                         "in": "body",
                         "required": true,
@@ -109,13 +132,49 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.MessageTask"
+                            "$ref": "#/definitions/dto.MessageTaskCreateResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
         },
         "/api/v1/tasks/messages/{id}": {
+            "get": {
+                "description": "Gets message task result from cache",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message Task"
+                ],
+                "summary": "Gets message task result from cache",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "message id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.MessageTaskResult"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Deletes message task that will",
                 "consumes": [
@@ -131,7 +190,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Message Task ID",
+                        "description": "message task id",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -143,6 +202,9 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -183,6 +245,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MessageTaskCreateResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PageResponse-model_MessageTask": {
             "type": "object",
             "properties": {
@@ -205,6 +278,17 @@ const docTemplate = `{
             "properties": {
                 "active": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.TaskStateUpdateResponse": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -242,6 +326,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MessageTaskResult": {
+            "type": "object",
+            "properties": {
+                "messageId": {
+                    "type": "string"
+                },
+                "sendingTime": {
+                    "type": "string"
+                },
+                "taskId": {
                     "type": "string"
                 }
             }
