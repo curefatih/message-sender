@@ -6,6 +6,17 @@ definitions:
       to:
         type: string
     type: object
+  dto.PageResponse-model_MessageTask:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.MessageTask'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+    type: object
   dto.TaskStateUpdateRequest:
     properties:
       active:
@@ -73,17 +84,33 @@ paths:
       summary: Updates Task State
       tags:
       - Task State
+  /api/v1/tasks/messages:
+    get:
+      consumes:
+      - application/json
+      description: Deletes message task that will
+      parameters:
+      - description: COMPLETED
+        in: query
+        name: status
+        required: true
+        type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PageResponse-model_MessageTask'
+      summary: Deletes Message Task
+      tags:
+      - Message Task
   /api/v1/tasks/messages/:
     post:
       consumes:
       - application/json
       description: Creates new message task that will be consumed.
       parameters:
-      - description: Auth Key
-        in: header
-        name: x-ins-auth-key
-        required: true
-        type: string
       - description: Add MessageTaskCreateRequest
         in: body
         name: MessageTaskCreateRequest
@@ -106,11 +133,6 @@ paths:
       - application/json
       description: Deletes message task that will
       parameters:
-      - description: Auth Key
-        in: header
-        name: x-ins-auth-key
-        required: true
-        type: string
       - description: Message Task ID
         in: path
         name: id

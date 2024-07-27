@@ -12,6 +12,7 @@ import (
 type MessageTaskRepository interface {
 	Create(ctx context.Context, messageTask *model.MessageTask) (*model.MessageTask, error)
 	GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int64) ([]*model.MessageTask, error)
+	GetPaginated(ctx context.Context, page, pageSize int, status *string) ([]*model.MessageTask, error)
 	DeleteById(ctx context.Context, id string) error
 	UpdateStatus(ctx context.Context, id string, status model.TaskStatus) error
 }
@@ -127,4 +128,30 @@ func (p *PostgreSQLMessageTaskRepository) UpdateStatus(ctx context.Context, id s
 	}
 
 	return nil
+}
+
+// GetPaginated implements MessageTaskRepository.
+func (p *PostgreSQLMessageTaskRepository) GetPaginated(ctx context.Context, page int, pageSize int, status *string) ([]*model.MessageTask, error) {
+	offset := (page - 1) * pageSize
+
+	var tasks []*model.MessageTask
+
+	query := p.db.WithContext(ctx).Model(&model.MessageTask{})
+
+	if status != nil {
+		query = query.Where("status = ?", *status)
+	}
+
+	// Fetch paginated tasks
+	err := query.
+		Offset(offset).
+		Limit(pageSize).
+		Find(&tasks).
+		Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch paginated tasks: %w", err)
+	}
+
+	return tasks, nil
 }

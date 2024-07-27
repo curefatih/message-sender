@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/curefatih/message-sender/cmd/api/docs"
 	"github.com/curefatih/message-sender/db"
+	"github.com/curefatih/message-sender/model/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	swaggerfiles "github.com/swaggo/files"
@@ -34,6 +36,7 @@ func Setup(
 	// Protect with header auth key
 	messageTasksV1Endpoint := taskStateV1Endpoint.Group("/messages")
 	messageTasksV1Endpoint.POST("/", messageTaskHandler.CreateMessageTask)
+	messageTasksV1Endpoint.GET("/", messageTaskHandler.GetMessagesWithPagination)
 	messageTasksV1Endpoint.DELETE("/:id", messageTaskHandler.DeleteMessageTask)
 
 	// Task state
@@ -61,4 +64,25 @@ func Health(g *gin.Context) {
 func initSwagger(r *gin.Engine) {
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+}
+
+func getPageQuery(g *gin.Context) dto.PageQuery {
+	page, _ := strconv.Atoi(g.Query("page"))
+
+	if page <= 0 {
+		page = 1
+	}
+
+	pageSize, _ := strconv.Atoi(g.Query("page_size"))
+	switch {
+	case pageSize > 20:
+		pageSize = 20
+	case pageSize <= 0:
+		pageSize = 10
+	}
+
+	return dto.PageQuery{
+		Page:     page,
+		PageSize: pageSize,
+	}
 }

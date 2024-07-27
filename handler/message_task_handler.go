@@ -34,7 +34,6 @@ func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param   x-ins-auth-key header string true "Auth Key"
 // @Param   MessageTaskCreateRequest body dto.MessageTaskCreateRequest true "Add MessageTaskCreateRequest"
 // @Success 201 {object} model.MessageTask
 // @Router /api/v1/tasks/messages/ [post]
@@ -81,7 +80,6 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Param   x-ins-auth-key header string true "Auth Key"
 // @Param        id   		path      int  true  "Message Task ID"
 // @Success 200 {string} OK
 // @Router /api/v1/tasks/messages/{id} [delete]
@@ -100,5 +98,35 @@ func (mth *MessageTaskHandler) DeleteMessageTask(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "message task successfully deleted",
+	})
+}
+
+// @BasePath /api/v1
+// DeleteMessageTask godoc
+// @Summary Deletes Message Task
+// @Schemes
+// @Description Deletes message task that will
+// @Tags Message Task
+// @Accept json
+// @Produce json
+// @Param status query  object  true  "COMPLETED"
+// @Success 200 {object} dto.PageResponse[model.MessageTask]
+// @Router /api/v1/tasks/messages [get]
+func (mth *MessageTaskHandler) GetMessagesWithPagination(ctx *gin.Context) {
+	pageQuery := getPageQuery(ctx)
+	status := ctx.Query("status")
+
+	res, err := mth.repository.GetPaginated(ctx.Request.Context(), pageQuery.Page, pageQuery.PageSize, &status)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "error while getting message tasks",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.PageResponse[model.MessageTask]{
+		Page:     pageQuery.Page,
+		PageSize: pageQuery.PageSize,
+		Data:     res,
 	})
 }

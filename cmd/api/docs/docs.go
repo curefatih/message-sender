@@ -49,6 +49,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/tasks/messages": {
+            "get": {
+                "description": "Deletes message task that will",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Message Task"
+                ],
+                "summary": "Deletes Message Task",
+                "parameters": [
+                    {
+                        "type": "object",
+                        "description": "COMPLETED",
+                        "name": "status",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PageResponse-model_MessageTask"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/tasks/messages/": {
             "post": {
                 "description": "Creates new message task that will be consumed.",
@@ -63,13 +95,6 @@ const docTemplate = `{
                 ],
                 "summary": "CreatesMessageTask",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Auth Key",
-                        "name": "x-ins-auth-key",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "Add MessageTaskCreateRequest",
                         "name": "MessageTaskCreateRequest",
@@ -104,13 +129,6 @@ const docTemplate = `{
                 ],
                 "summary": "Deletes Message Task",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Auth Key",
-                        "name": "x-ins-auth-key",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "integer",
                         "description": "Message Task ID",
@@ -162,6 +180,23 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.PageResponse-model_MessageTask": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.MessageTask"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "pageSize": {
+                    "type": "integer"
                 }
             }
         },
