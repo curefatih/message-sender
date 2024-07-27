@@ -6,7 +6,7 @@ process:
   task:
     count: 2
     # checks every minute
-    cron: "*/10 * * * * *" 
+    cron: "0 * * * * *" 
     # should n minute past last processing time
     delta_in_minutes: 2 
     # retry 2 times at most
