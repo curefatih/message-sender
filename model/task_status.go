@@ -5,10 +5,10 @@ import "database/sql/driver"
 type TaskStatus string
 
 const (
-	WAITING    TaskStatus = "WAITING"
-	PROCESSING TaskStatus = "PROCESSING"
-	COMPLETED  TaskStatus = "COMPLETED"
-	FAILED     TaskStatus = "FAILED"
+	TaskStatusWaiting    TaskStatus = "WAITING"
+	TaskStatusProcessing TaskStatus = "PROCESSING"
+	TaskStatusCompleted  TaskStatus = "COMPLETED"
+	TaskStatusFailed     TaskStatus = "FAILED"
 )
 
 func (self *TaskStatus) Scan(value interface{}) error {
