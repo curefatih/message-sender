@@ -24,11 +24,25 @@ definitions:
         $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: integer
+      status:
+        $ref: '#/definitions/model.TaskStatus'
       to:
         type: string
       updatedAt:
         type: string
     type: object
+  model.TaskStatus:
+    enum:
+    - WAITING
+    - PROCESSING
+    - COMPLETED
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - WAITING
+    - PROCESSING
+    - COMPLETED
+    - FAILED
 info:
   contact: {}
 paths:

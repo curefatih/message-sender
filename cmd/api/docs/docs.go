@@ -181,6 +181,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "status": {
+                    "$ref": "#/definitions/model.TaskStatus"
+                },
                 "to": {
                     "type": "string"
                 },
@@ -188,6 +191,21 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.TaskStatus": {
+            "type": "string",
+            "enum": [
+                "WAITING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED"
+            ],
+            "x-enum-varnames": [
+                "WAITING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED"
+            ]
         }
     }
 }`
