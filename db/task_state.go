@@ -2,13 +2,17 @@ package db
 
 import (
 	"context"
+	"log"
+	"time"
 
+	"github.com/curefatih/message-sender/model"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
 type TaskStateRepository interface {
 	UpdateTaskActiveStatus(ctx context.Context, active bool) error
+	GetTaskState(ctx context.Context) (*model.TaskState, error)
 }
 
 type PostgreSQLTaskStateRepository struct {
@@ -28,4 +32,36 @@ func NewPostgreSQLTaskStateRepository(cfg *viper.Viper, db *gorm.DB) *PostgreSQL
 // UpdateTaskActiveStatus implements TaskStateRepository.
 func (p *PostgreSQLTaskStateRepository) UpdateTaskActiveStatus(ctx context.Context, active bool) error {
 	panic("unimplemented")
+}
+
+// GetTaskState implements TaskStateRepository.
+func (p *PostgreSQLTaskStateRepository) GetTaskState(ctx context.Context) (*model.TaskState, error) {
+	var messageTask model.TaskState
+
+	result := p.db.First(&messageTask)
+
+	// If no record is found, create a new one
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			messageTask = model.TaskState{
+				Active:                  true,
+				LastSuccessfulQueryTime: time.Now(),
+				Status:                  model.WAITING,
+			}
+			createResult := p.db.Create(&messageTask)
+			if createResult.Error != nil {
+				log.Fatalf("failed to create user: %v", createResult.Error)
+			}
+
+			return &messageTask, nil
+		} else {
+			log.Fatalf("failed to fetch user: %v", result.Error)
+		}
+	}
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &messageTask, nil
 }
