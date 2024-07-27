@@ -8,6 +8,7 @@ import (
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/handler"
 	"github.com/curefatih/message-sender/middleware"
+	"github.com/curefatih/message-sender/runner"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -19,6 +20,9 @@ func main() {
 	dbConn := db.InitPostgreSQLConnection(ctx, cfg.GetString("db.postgresql.dsn"))
 	taskStateRepository := db.NewPostgreSQLTaskStateRepository(cfg, dbConn)
 	messageTaskRepository := db.NewPostgreSQLMessageTaskRepository(cfg, dbConn)
+
+	r := runner.NewSentMessageTaskRunner(ctx, cfg, messageTaskRepository, taskStateRepository)
+	r.Run(ctx)
 
 	router := gin.Default()
 	m := middleware.ClientMiddleware{}
@@ -32,6 +36,7 @@ func main() {
 		taskStateRepository,
 	).Run(); err != nil {
 		log.Fatal(err)
+		r.Stop()
 		return
 	}
 }
