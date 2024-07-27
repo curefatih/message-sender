@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/curefatih/message-sender/db"
@@ -75,7 +76,21 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 		for _, task := range tasks {
 			task := task // Create a new instance for the goroutine
 			g.Go(func() error {
-				return invokeTask(ctx, task, retryCount)
+				err := invokeTask(ctx, s.cfg, task, retryCount)
+				if err != nil {
+					err := s.messageTaskRepository.UpdateStatus(ctx, strconv.FormatUint(uint64(task.ID), 10), model.FAILED)
+					if err != nil {
+						log.Fatalln("couldn't update message task status. terminating...")
+					}
+					return nil
+				}
+
+				err = s.messageTaskRepository.UpdateStatus(ctx, strconv.FormatUint(uint64(task.ID), 10), model.COMPLETED)
+				if err != nil {
+					log.Fatalln("couldn't update message task status. terminating...")
+				}
+
+				return nil
 			})
 		}
 
@@ -95,14 +110,14 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 	return nil
 }
 
-func invokeTask(ctx context.Context, messageTask *model.MessageTask, retryCount int) error {
+func invokeTask(ctx context.Context, cfg *viper.Viper, messageTask *model.MessageTask, retryCount int) error {
 	for i := 0; i <= retryCount; i++ {
 		fmt.Printf("Invoking task %d, attempt %d\n", messageTask.ID, i+1)
 		// Simulate task invocation
 		time.Sleep(1 * time.Second) // Simulate task duration
 
 		// Simulate task success or failure
-		err := simulateTask()
+		err := runMessageTask(ctx, cfg, *messageTask)
 		if err == nil {
 			return nil
 		}
@@ -116,15 +131,6 @@ func invokeTask(ctx context.Context, messageTask *model.MessageTask, retryCount 
 		fmt.Printf("Task %d failed on attempt %d: %v\n", messageTask.ID, i+1, err)
 	}
 	return fmt.Errorf("task %d failed after %d attempts", messageTask.ID, retryCount)
-}
-
-// simulateTask simulates a task that may fail or succeed
-func simulateTask() error {
-	// Simulate a 50% chance of failure
-	if time.Now().UnixNano()%2 == 0 {
-		return fmt.Errorf("simulated task failure")
-	}
-	return nil
 }
 
 // Stop implements Runner.
