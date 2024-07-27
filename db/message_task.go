@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/curefatih/message-sender/model"
 	"github.com/spf13/viper"
@@ -12,6 +13,7 @@ type MessageTaskRepository interface {
 	Create(ctx context.Context, messageTask *model.MessageTask) (*model.MessageTask, error)
 	GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int64) ([]*model.MessageTask, error)
 	DeleteById(ctx context.Context, id string) error
+	UpdateStatus(ctx context.Context, id string, status model.TaskStatus) error
 }
 
 type PostgreSQLMessageTaskRepository struct {
@@ -52,5 +54,77 @@ func (p *PostgreSQLMessageTaskRepository) DeleteById(ctx context.Context, id str
 
 // GetUnprocessedNMessageTaskAndMarkAsProcessing implements MessageTaskRepository.
 func (p *PostgreSQLMessageTaskRepository) GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int64) ([]*model.MessageTask, error) {
-	panic("unimplemented")
+	var tasks []*model.MessageTask
+	var err error
+
+	// Start a transaction
+	tx := p.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", tx.Error)
+	}
+
+	// Ensure the transaction is rolled back in case of error
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Fetch tasks with PROCESSING status first
+	err = tx.Where("status = ?", model.PROCESSING).
+		Limit(int(n)).
+		Find(&tasks).
+		Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch PROCESSING tasks: %w", err)
+	}
+
+	// If less than n tasks were fetched, fetch additional tasks with WAITING status
+	if int64(len(tasks)) < n {
+		remaining := n - int64(len(tasks))
+		var additionalTasks []*model.MessageTask
+
+		err = tx.Where("status = ?", model.WAITING).
+			Limit(int(remaining)).
+			Find(&additionalTasks).
+			Error
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch WAITING tasks: %w", err)
+		}
+
+		tasks = append(tasks, additionalTasks...)
+	}
+
+	if len(tasks) == 0 {
+		return tasks, nil
+	}
+
+	// Mark tasks as PROCESSING
+	for _, task := range tasks {
+		task.Status = model.PROCESSING
+	}
+
+	err = tx.Save(&tasks).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to update task status: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return tasks, nil
+}
+
+// UpdateStatus implements MessageTaskRepository.
+func (p *PostgreSQLMessageTaskRepository) UpdateStatus(ctx context.Context, id string, status model.TaskStatus) error {
+	// Use the context with the database query
+	if err := p.db.WithContext(ctx).Model(&model.MessageTask{}).Where("id = ?", id).Update("status", status).Error; err != nil {
+		return fmt.Errorf("failed to update status: %w", err)
+	}
+
+	return nil
 }
