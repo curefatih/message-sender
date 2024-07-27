@@ -1,5 +1,5 @@
 auth:
-  key: <changeme>
+  key: INS.something
 
 db:
   postgresql:
