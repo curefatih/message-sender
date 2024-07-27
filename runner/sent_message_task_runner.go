@@ -64,6 +64,7 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 			return
 		}
 
+		currentTime := time.Now()
 		tasks, err := s.messageTaskRepository.GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx, count)
 		if err != nil {
 			// we may not exit?
@@ -92,6 +93,15 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 
 				return nil
 			})
+		}
+
+		err = s.taskStateRepository.UpdateTaskState(ctx, &model.TaskState{
+			LastSuccessfulQueryTime: currentTime,
+		})
+
+		if err != nil {
+			log.Info().Err(err)
+			return
 		}
 
 		// Wait for all tasks to complete

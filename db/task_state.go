@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/curefatih/message-sender/model"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
@@ -13,6 +13,7 @@ import (
 type TaskStateRepository interface {
 	UpdateTaskActiveStatus(ctx context.Context, active bool) error
 	GetOrCreateTaskState(ctx context.Context) (*model.TaskState, error)
+	UpdateTaskState(ctx context.Context, taskState *model.TaskState) error
 }
 
 type PostgreSQLTaskStateRepository struct {
@@ -61,12 +62,12 @@ func (p *PostgreSQLTaskStateRepository) GetOrCreateTaskState(ctx context.Context
 			}
 			createResult := p.db.Create(&messageTask)
 			if createResult.Error != nil {
-				log.Fatalf("failed to create user: %v", createResult.Error)
+				log.Fatal().Msgf("failed to create user: %v", createResult.Error)
 			}
 
 			return &messageTask, nil
 		} else {
-			log.Fatalf("failed to fetch user: %v", result.Error)
+			log.Fatal().Msgf("failed to fetch user: %v", result.Error)
 		}
 	}
 
@@ -75,4 +76,24 @@ func (p *PostgreSQLTaskStateRepository) GetOrCreateTaskState(ctx context.Context
 	}
 
 	return &messageTask, nil
+}
+
+// UpdateTaskStateWithTx implements TaskStateRepository.
+func (p *PostgreSQLTaskStateRepository) UpdateTaskState(ctx context.Context, taskState *model.TaskState) error {
+
+	currentTaskState, err := p.GetOrCreateTaskState(ctx)
+	if err != nil {
+		log.Info().Msg("error while getting task state")
+		return err
+	}
+
+	taskState.ID = currentTaskState.ID
+
+	res := p.db.Updates(taskState)
+	if res.Error != nil {
+		log.Info().Msg("error while updating task state")
+		return res.Error
+	}
+
+	return nil
 }
