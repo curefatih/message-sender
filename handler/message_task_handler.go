@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/curefatih/message-sender/db"
@@ -38,6 +39,7 @@ func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.
 // @Success 201 {object} model.MessageTask
 // @Router /api/v1/tasks/messages/ [post]
 func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
+	maxContentLength := mth.cfg.GetInt("process.task.message.max_content_length")
 	var messageTaskReq dto.MessageTaskCreateRequest
 
 	err := ctx.ShouldBind(&messageTaskReq)
@@ -49,6 +51,14 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 	}
 	messageTask := messageTaskReq.ToMessageTask()
 	messageTask.Status = model.WAITING
+
+	if len(messageTask.MessageContent) > maxContentLength {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("content length bigger than %d", maxContentLength),
+		})
+		return
+	}
+
 	res, err := mth.repository.Create(ctx.Request.Context(), messageTask)
 
 	if err != nil {
