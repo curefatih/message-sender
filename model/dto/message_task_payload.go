@@ -13,3 +13,8 @@ func (mtcr *MessageTaskCreateRequest) ToMessageTask() *model.MessageTask {
 		To:             mtcr.To,
 	}
 }
+
+type MessageTaskSendPayload struct {
+	MessageContent string `json:"content"`
+	To             string `json:"to"`
+}
