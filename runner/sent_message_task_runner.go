@@ -53,7 +53,13 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 			log.Fatalln("couldn't find task state. terminating...", err)
 		}
 
-		if !taskState.Active || !shouldRunTask(taskState.LastSuccessfulQueryTime, deltaMin) {
+		if !taskState.Active {
+			log.Println("task schedule inactive. skipping...")
+			return
+		}
+
+		if !shouldRunTask(taskState.LastSuccessfulQueryTime, deltaMin) {
+			log.Println("delta not in past. task waiting next step...")
 			return
 		}
 
