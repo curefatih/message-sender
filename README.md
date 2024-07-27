@@ -13,7 +13,7 @@ send message for every N minute per unprocessed X message.
 
 ![Creating webhook site url](/assets/creating-webhooksite-response.png)
 
-|   |   | 
+|  Column | Value | 
 |---|---|
 | Status Code  | 202 | 
 | Content type | `application/json` | 
