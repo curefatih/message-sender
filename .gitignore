@@ -1,0 +1,6 @@
+# ignore config files
+config.yml
+
+# docker
+redis.env
+cassandra.env
