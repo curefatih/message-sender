@@ -4,6 +4,8 @@ services:
   redis:
     image: 'bitnami/redis:latest'
     env_file: "local.redis.env"
+    ports:
+      - 6379:6379
   
   postgres:
     image: postgres:14-alpine
