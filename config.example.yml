@@ -8,3 +8,9 @@ db:
 process:
   task:
     count: 2
+    # checks every minute
+    cron: "* * * * *" 
+    # should n minute past last processing time
+    delta_in_minutes: 2 
+    # retry 2 times at most
+    retry: 2 
