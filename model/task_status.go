@@ -7,7 +7,7 @@ type TaskStatus string
 const (
 	WAITING    TaskStatus = "WAITING"
 	PROCESSING TaskStatus = "PROCESSING"
-	COMPLETE   TaskStatus = "COMPLETE"
+	COMPLETED  TaskStatus = "COMPLETED"
 	FAILED     TaskStatus = "FAILED"
 )
 
