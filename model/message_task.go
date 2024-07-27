@@ -1,7 +1,9 @@
 package model
 
+import "gorm.io/gorm"
+
 type MessageTask struct {
-	ID             int64
+	gorm.Model
 	MessageContent string
 	PhoneNumber    string
 }
