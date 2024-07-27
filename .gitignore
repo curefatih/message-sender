@@ -4,3 +4,4 @@ config.yml
 # docker
 redis.env
 cassandra.env
+docker/data
