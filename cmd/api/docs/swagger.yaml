@@ -1,0 +1,64 @@
+info:
+  contact: {}
+paths:
+  /api/v1/tasks:
+    put:
+      consumes:
+      - application/json
+      description: Creates new message task that will be consumed.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Updates Task State
+      tags:
+      - Task State
+  /api/v1/tasks/messages:
+    post:
+      consumes:
+      - application/json
+      description: Creates new message task that will be consumed.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+      summary: Creates Message Task
+      tags:
+      - Message Task
+  /api/v1/tasks/messages/:id:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes message task that will
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Deletes Message Task
+      tags:
+      - Message Task
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: response ok
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: health
+      tags:
+      - health
+swagger: "2.0"
