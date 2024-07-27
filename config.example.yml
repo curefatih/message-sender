@@ -13,6 +13,7 @@ process:
     retry: 2 
 
     message:
+      max_content_length: 40
       url: https://webhook.site/smth
       auth:
         key: INS.smth
