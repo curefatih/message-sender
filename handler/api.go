@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/curefatih/message-sender/cmd/api/docs"
+	"github.com/curefatih/message-sender/db"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	swaggerfiles "github.com/swaggo/files"
@@ -16,15 +17,30 @@ func Setup(
 	cfg *viper.Viper,
 	router *gin.Engine,
 	m Middleware,
+	messageTaskRepository db.MessageTaskRepository,
+	taskStateRepository db.TaskStateRepository,
 ) *gin.Engine {
 	// init swagger
-	initSwagger(router)
+
+	r := router.Group("/api/v1")
+	// health
+	router.GET("/health", Health)
+
+	taskStateHandler := NewTaskStateHandler(ctx, cfg, taskStateRepository)
+	messageTaskHandler := NewMessageTaskHandler(ctx, cfg, messageTaskRepository)
+
+	taskStateV1Endpoint := r.Group("/tasks")
+	taskStateV1Endpoint.Use(m.AuthInsiderMiddleware(cfg))
+	taskStateV1Endpoint.PUT("/", taskStateHandler.UpdateTaskState)
 
 	// Protect with header auth key
-	authorized := router.Group("/")
-	authorized.Use(m.AuthInsiderMiddleware(cfg))
-	authorized.POST("/")
-	authorized.DELETE("/")
+	messageTasksV1Endpoint := taskStateV1Endpoint.Group("/messages")
+	messageTasksV1Endpoint.POST("/", messageTaskHandler.CreateMessageTask)
+	messageTasksV1Endpoint.DELETE("/:id", messageTaskHandler.DeleteMessageTask)
+
+	// Task state
+
+	initSwagger(router)
 
 	return router
 }
@@ -46,12 +62,5 @@ func Health(g *gin.Context) {
 
 func initSwagger(r *gin.Engine) {
 	docs.SwaggerInfo.BasePath = "/"
-	v1 := r.Group("/")
-	{
-		eg := v1.Group("/")
-		{
-			eg.GET("/health", Health)
-		}
-	}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
