@@ -6,5 +6,5 @@ type MessageTask struct {
 	gorm.Model
 	MessageContent string     `json:"content"`
 	To             string     `json:"to"`
-	Status         TaskStatus `string:"status"`
+	Status         TaskStatus `json:"status", sql:"type:task_status"`
 }

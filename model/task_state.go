@@ -9,6 +9,6 @@ import (
 type TaskState struct {
 	gorm.Model
 	LastSuccessfulQueryTime time.Time
-	Status                  TaskStatus
+	Status                  TaskStatus `sql:"type:task_status"`
 	Active                  bool
 }

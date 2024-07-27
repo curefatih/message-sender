@@ -48,7 +48,7 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 		return
 	}
 	messageTask := messageTaskReq.ToMessageTask()
-	messageTask.Status = model.TaskStatusWaiting
+	messageTask.Status = model.WAITING
 	res, err := mth.repository.Create(ctx.Request.Context(), messageTask)
 
 	if err != nil {
