@@ -2,10 +2,15 @@ package runner
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"time"
 
 	"github.com/curefatih/message-sender/db"
+	"github.com/curefatih/message-sender/model"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
+	"golang.org/x/sync/errgroup"
 )
 
 type SentMessageTaskRunner struct {
@@ -22,7 +27,7 @@ func NewSentMessageTaskRunner(
 	messageTaskRepository db.MessageTaskRepository,
 	taskStateRepository db.TaskStateRepository,
 ) *SentMessageTaskRunner {
-	c := cron.New()
+	c := cron.New(cron.WithSeconds())
 	return &SentMessageTaskRunner{
 		cron:                  c,
 		ctx:                   ctx,
@@ -37,7 +42,43 @@ var _ Runner = &SentMessageTaskRunner{}
 // Run implements Runner.
 func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 	_, err := s.cron.AddFunc(s.cfg.GetString("process.task.cron"), func() {
-		println("TODO: running now")
+		log.Println("running sent message task")
+		count := s.cfg.GetInt64("process.task.count")
+		retryCount := s.cfg.GetInt("process.task.retry")
+		deltaMin := s.cfg.GetInt64("process.task.delta_in_minutes")
+
+		taskState, err := s.taskStateRepository.GetTaskState(ctx)
+
+		if err != nil {
+			log.Fatalln("couldn't find task state. terminating...", err)
+		}
+
+		if !taskState.Active || !shouldRunTask(taskState.LastSuccessfulQueryTime, deltaMin) {
+			return
+		}
+
+		tasks, err := s.messageTaskRepository.GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx, count)
+		if err != nil {
+			// we may not exit?
+			log.Fatalln("couldn't get message tasks. terminating...")
+		}
+
+		// Create a new errgroup
+		g, ctx := errgroup.WithContext(context.Background())
+
+		for _, task := range tasks {
+			task := task // Create a new instance for the goroutine
+			g.Go(func() error {
+				return invokeTask(ctx, task, retryCount)
+			})
+		}
+
+		// Wait for all tasks to complete
+		if err := g.Wait(); err != nil {
+			fmt.Println("error:", err)
+		} else {
+			fmt.Println("all tasks completed successfully")
+		}
 	})
 
 	if err != nil {
@@ -48,8 +89,49 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 	return nil
 }
 
+func invokeTask(ctx context.Context, messageTask *model.MessageTask, retryCount int) error {
+	for i := 0; i <= retryCount; i++ {
+		fmt.Printf("Invoking task %d, attempt %d\n", messageTask.ID, i+1)
+		// Simulate task invocation
+		time.Sleep(1 * time.Second) // Simulate task duration
+
+		// Simulate task success or failure
+		err := simulateTask()
+		if err == nil {
+			return nil
+		}
+
+		// If the context is done, return its error
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		fmt.Printf("Task %d failed on attempt %d: %v\n", messageTask.ID, i+1, err)
+	}
+	return fmt.Errorf("task %d failed after %d attempts", messageTask.ID, retryCount)
+}
+
+// simulateTask simulates a task that may fail or succeed
+func simulateTask() error {
+	// Simulate a 50% chance of failure
+	if time.Now().UnixNano()%2 == 0 {
+		return fmt.Errorf("simulated task failure")
+	}
+	return nil
+}
+
 // Stop implements Runner.
 func (s *SentMessageTaskRunner) Stop() error {
 	s.cron.Stop()
 	return nil
+}
+
+func shouldRunTask(scheduledTime time.Time, deltaMin int64) bool {
+	// Add deltaMin minutes to the scheduled time
+	deadline := scheduledTime.Add(time.Duration(deltaMin) * time.Minute)
+	// Get the current time
+	currentTime := time.Now()
+	// Check if current time is past the deadline
+	return currentTime.After(deadline)
 }
