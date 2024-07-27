@@ -1,0 +1,10 @@
+auth:
+  key: <changeme>
+
+db:
+  postgresql:
+    dsn: "host=localhost user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+
+process:
+  task:
+    count: 2
