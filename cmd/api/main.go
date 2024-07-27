@@ -7,7 +7,6 @@ import (
 
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/handler"
-	"github.com/curefatih/message-sender/middleware"
 	"github.com/curefatih/message-sender/runner"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -25,13 +24,11 @@ func main() {
 	r.Run(ctx)
 
 	router := gin.Default()
-	m := middleware.ClientMiddleware{}
 
 	if err := handler.Setup(
 		ctx,
 		cfg,
 		router,
-		m,
 		messageTaskRepository,
 		taskStateRepository,
 	).Run(); err != nil {

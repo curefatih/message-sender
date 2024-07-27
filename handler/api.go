@@ -16,7 +16,6 @@ func Setup(
 	ctx context.Context,
 	cfg *viper.Viper,
 	router *gin.Engine,
-	m Middleware,
 	messageTaskRepository db.MessageTaskRepository,
 	taskStateRepository db.TaskStateRepository,
 ) *gin.Engine {
@@ -30,7 +29,6 @@ func Setup(
 	messageTaskHandler := NewMessageTaskHandler(ctx, cfg, messageTaskRepository)
 
 	taskStateV1Endpoint := r.Group("/tasks")
-	taskStateV1Endpoint.Use(m.AuthInsiderMiddleware(cfg))
 	taskStateV1Endpoint.PUT("/", taskStateHandler.UpdateTaskState)
 
 	// Protect with header auth key
