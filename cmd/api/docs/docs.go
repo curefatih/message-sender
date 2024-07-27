@@ -38,7 +38,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/tasks/messages": {
+        "/api/v1/tasks/messages/": {
             "post": {
                 "description": "Creates new message task that will be consumed.",
                 "consumes": [
@@ -50,18 +50,36 @@ const docTemplate = `{
                 "tags": [
                     "Message Task"
                 ],
-                "summary": "Creates Message Task",
+                "summary": "CreatesMessageTask",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth Key",
+                        "name": "x-ins-auth-key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Add MessageTaskCreateRequest",
+                        "name": "MessageTaskCreateRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageTaskCreateRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/model.MessageTask"
                         }
                     }
                 }
             }
         },
-        "/api/v1/tasks/messages/:id": {
+        "/api/v1/tasks/messages/{id}": {
             "delete": {
                 "description": "Deletes message task that will",
                 "consumes": [
@@ -74,6 +92,22 @@ const docTemplate = `{
                     "Message Task"
                 ],
                 "summary": "Deletes Message Task",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Auth Key",
+                        "name": "x-ins-auth-key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Message Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -104,6 +138,54 @@ const docTemplate = `{
                             "type": "string"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.MessageTaskCreateRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                }
+            }
+        },
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.MessageTask": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         }

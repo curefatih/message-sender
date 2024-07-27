@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/curefatih/message-sender/db"
-	"github.com/curefatih/message-sender/model"
+	"github.com/curefatih/message-sender/model/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -25,20 +25,21 @@ func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.
 }
 
 // @BasePath /api/v1
-
 // CreateMessageTask godoc
-// @Summary Creates Message Task
+// @Summary CreatesMessageTask
 // @Schemes
 // @Description Creates new message task that will be consumed.
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Success 201 {string} todo
-// @Router /api/v1/tasks/messages [post]
+// @Param   x-ins-auth-key header string true "Auth Key"
+// @Param   MessageTaskCreateRequest body dto.MessageTaskCreateRequest true "Add MessageTaskCreateRequest"
+// @Success 201 {object} model.MessageTask
+// @Router /api/v1/tasks/messages/ [post]
 func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
-	var messageTask model.MessageTask
+	var messageTaskReq dto.MessageTaskCreateRequest
 
-	err := ctx.ShouldBind(&messageTask)
+	err := ctx.ShouldBind(&messageTaskReq)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -46,7 +47,7 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 		return
 	}
 
-	res, err := mth.repository.Create(ctx.Request.Context(), &messageTask)
+	res, err := mth.repository.Create(ctx.Request.Context(), messageTaskReq.ToMessageTask())
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -68,8 +69,10 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 // @Tags Message Task
 // @Accept json
 // @Produce json
-// @Success 200 {string} TODO
-// @Router /api/v1/tasks/messages/:id [delete]
+// @Param   x-ins-auth-key header string true "Auth Key"
+// @Param        id   		path      int  true  "Message Task ID"
+// @Success 200 {string} OK
+// @Router /api/v1/tasks/messages/{id} [delete]
 func (mth *MessageTaskHandler) DeleteMessageTask(ctx *gin.Context) {
 
 	messageTaskID := ctx.Param("id")
@@ -78,11 +81,12 @@ func (mth *MessageTaskHandler) DeleteMessageTask(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "error while creating new message task",
+			"error": "error while deleting message task",
 		})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "successfully deleted new message task",
+		"message": "message task successfully deleted",
 	})
 }

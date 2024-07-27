@@ -1,3 +1,34 @@
+definitions:
+  dto.MessageTaskCreateRequest:
+    properties:
+      content:
+        type: string
+      to:
+        type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  model.MessageTask:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      to:
+        type: string
+      updatedAt:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -16,26 +47,49 @@ paths:
       summary: Updates Task State
       tags:
       - Task State
-  /api/v1/tasks/messages:
+  /api/v1/tasks/messages/:
     post:
       consumes:
       - application/json
       description: Creates new message task that will be consumed.
+      parameters:
+      - description: Auth Key
+        in: header
+        name: x-ins-auth-key
+        required: true
+        type: string
+      - description: Add MessageTaskCreateRequest
+        in: body
+        name: MessageTaskCreateRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MessageTaskCreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            type: string
-      summary: Creates Message Task
+            $ref: '#/definitions/model.MessageTask'
+      summary: CreatesMessageTask
       tags:
       - Message Task
-  /api/v1/tasks/messages/:id:
+  /api/v1/tasks/messages/{id}:
     delete:
       consumes:
       - application/json
       description: Deletes message task that will
+      parameters:
+      - description: Auth Key
+        in: header
+        name: x-ins-auth-key
+        required: true
+        type: string
+      - description: Message Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
