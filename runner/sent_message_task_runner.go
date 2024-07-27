@@ -47,7 +47,7 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 		retryCount := s.cfg.GetInt("process.task.retry")
 		deltaMin := s.cfg.GetInt64("process.task.delta_in_minutes")
 
-		taskState, err := s.taskStateRepository.GetTaskState(ctx)
+		taskState, err := s.taskStateRepository.GetOrCreateTaskState(ctx)
 
 		if err != nil {
 			log.Fatalln("couldn't find task state. terminating...", err)

@@ -28,11 +28,22 @@ const docTemplate = `{
                     "Task State"
                 ],
                 "summary": "Updates Task State",
+                "parameters": [
+                    {
+                        "description": "Add TaskStateUpdateRequest",
+                        "name": "TaskStateUpdateRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.TaskStateUpdateRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message\": string, \"active\": bool}",
                         "schema": {
-                            "type": "string"
+                            "type": "map"
                         }
                     }
                 }
@@ -151,6 +162,14 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TaskStateUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
                 }
             }
         },

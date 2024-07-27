@@ -6,6 +6,11 @@ definitions:
       to:
         type: string
     type: object
+  dto.TaskStateUpdateRequest:
+    properties:
+      active:
+        type: boolean
+    type: object
   gorm.DeletedAt:
     properties:
       time:
@@ -51,13 +56,20 @@ paths:
       consumes:
       - application/json
       description: Creates new message task that will be consumed.
+      parameters:
+      - description: Add TaskStateUpdateRequest
+        in: body
+        name: TaskStateUpdateRequest
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TaskStateUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message": string, "active": bool}'
           schema:
-            type: string
+            type: map
       summary: Updates Task State
       tags:
       - Task State

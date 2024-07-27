@@ -12,7 +12,7 @@ import (
 
 type TaskStateRepository interface {
 	UpdateTaskActiveStatus(ctx context.Context, active bool) error
-	GetTaskState(ctx context.Context) (*model.TaskState, error)
+	GetOrCreateTaskState(ctx context.Context) (*model.TaskState, error)
 }
 
 type PostgreSQLTaskStateRepository struct {
@@ -31,11 +31,22 @@ func NewPostgreSQLTaskStateRepository(cfg *viper.Viper, db *gorm.DB) *PostgreSQL
 
 // UpdateTaskActiveStatus implements TaskStateRepository.
 func (p *PostgreSQLTaskStateRepository) UpdateTaskActiveStatus(ctx context.Context, active bool) error {
-	panic("unimplemented")
+	taskState, err := p.GetOrCreateTaskState(ctx)
+	if err != nil {
+		return err
+	}
+
+	taskState.Active = active
+	res := p.db.Save(taskState)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	return nil
 }
 
-// GetTaskState implements TaskStateRepository.
-func (p *PostgreSQLTaskStateRepository) GetTaskState(ctx context.Context) (*model.TaskState, error) {
+// GetOrCreateTaskState implements TaskStateRepository.
+func (p *PostgreSQLTaskStateRepository) GetOrCreateTaskState(ctx context.Context) (*model.TaskState, error) {
 	var messageTask model.TaskState
 
 	result := p.db.First(&messageTask)
