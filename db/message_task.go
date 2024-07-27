@@ -10,7 +10,7 @@ import (
 
 type MessageTaskRepository interface {
 	Create(ctx context.Context, messageTask *model.MessageTask) (*model.MessageTask, error)
-	GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int) ([]*model.MessageTask, error)
+	GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int64) ([]*model.MessageTask, error)
 	DeleteById(ctx context.Context, id string) error
 }
 
@@ -51,6 +51,6 @@ func (p *PostgreSQLMessageTaskRepository) DeleteById(ctx context.Context, id str
 }
 
 // GetUnprocessedNMessageTaskAndMarkAsProcessing implements MessageTaskRepository.
-func (p *PostgreSQLMessageTaskRepository) GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int) ([]*model.MessageTask, error) {
+func (p *PostgreSQLMessageTaskRepository) GetUnprocessedNMessageTaskAndMarkAsProcessing(ctx context.Context, n int64) ([]*model.MessageTask, error) {
 	panic("unimplemented")
 }
