@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/curefatih/message-sender/db"
+	"github.com/curefatih/message-sender/model"
 	"github.com/curefatih/message-sender/model/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -46,8 +47,9 @@ func (mth *MessageTaskHandler) CreateMessageTask(ctx *gin.Context) {
 		})
 		return
 	}
-
-	res, err := mth.repository.Create(ctx.Request.Context(), messageTaskReq.ToMessageTask())
+	messageTask := messageTaskReq.ToMessageTask()
+	messageTask.Status = model.TaskStatusWaiting
+	res, err := mth.repository.Create(ctx.Request.Context(), messageTask)
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
