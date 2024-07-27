@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 
+	"github.com/curefatih/message-sender/cache"
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/handler"
+	"github.com/curefatih/message-sender/model"
 	"github.com/curefatih/message-sender/runner"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -19,7 +21,10 @@ func main() {
 	taskStateRepository := db.NewPostgreSQLTaskStateRepository(cfg, dbConn)
 	messageTaskRepository := db.NewPostgreSQLMessageTaskRepository(cfg, dbConn)
 
-	r := runner.NewSentMessageTaskRunner(ctx, cfg, messageTaskRepository, taskStateRepository)
+	redisClient := cache.SetupRedisClient(ctx, cfg)
+	messageTaskResultCache := cache.NewRedisCache[model.MessageTaskResult](redisClient, cfg)
+
+	r := runner.NewSentMessageTaskRunner(ctx, cfg, messageTaskRepository, taskStateRepository, messageTaskResultCache)
 	r.Run(ctx)
 
 	router := gin.New()
@@ -30,6 +35,7 @@ func main() {
 		router,
 		messageTaskRepository,
 		taskStateRepository,
+		messageTaskResultCache,
 	).Run(); err != nil {
 		log.Fatal().Err(err)
 		r.Stop()

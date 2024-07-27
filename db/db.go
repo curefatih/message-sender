@@ -10,7 +10,6 @@ import (
 )
 
 func InitPostgreSQLConnection(ctx context.Context, dsn string) *gorm.DB {
-	println("dsn is:", dsn)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")

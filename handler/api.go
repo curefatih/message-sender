@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/curefatih/message-sender/cache"
 	"github.com/curefatih/message-sender/cmd/api/docs"
 	"github.com/curefatih/message-sender/db"
+	"github.com/curefatih/message-sender/model"
 	"github.com/curefatih/message-sender/model/dto"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
@@ -22,6 +24,7 @@ func Setup(
 	router *gin.Engine,
 	messageTaskRepository db.MessageTaskRepository,
 	taskStateRepository db.TaskStateRepository,
+	messageTaskResultCache cache.Cache[model.MessageTaskResult],
 ) *gin.Engine {
 	// init swagger
 	router.Use(logger.SetLogger(
@@ -35,7 +38,7 @@ func Setup(
 	router.GET("/health", Health)
 
 	taskStateHandler := NewTaskStateHandler(ctx, cfg, taskStateRepository)
-	messageTaskHandler := NewMessageTaskHandler(ctx, cfg, messageTaskRepository)
+	messageTaskHandler := NewMessageTaskHandler(ctx, cfg, messageTaskRepository, messageTaskResultCache)
 
 	taskStateV1Endpoint := r.Group("/tasks")
 	taskStateV1Endpoint.PUT("/", taskStateHandler.UpdateTaskState)
@@ -44,6 +47,7 @@ func Setup(
 	messageTasksV1Endpoint := taskStateV1Endpoint.Group("/messages")
 	messageTasksV1Endpoint.POST("/", messageTaskHandler.CreateMessageTask)
 	messageTasksV1Endpoint.GET("/", messageTaskHandler.GetMessagesWithPagination)
+	messageTasksV1Endpoint.GET("/:id/result", messageTaskHandler.GetMessageTaskResult)
 	messageTasksV1Endpoint.DELETE("/:id", messageTaskHandler.DeleteMessageTask)
 
 	// Task state

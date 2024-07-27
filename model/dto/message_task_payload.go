@@ -18,3 +18,8 @@ type MessageTaskSendPayload struct {
 	MessageContent string `json:"content"`
 	To             string `json:"to"`
 }
+
+type MessageTaskSendResponse struct {
+	Message   string `json:"message"`
+	MessageId string `json:"messageId"`
+}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/curefatih/message-sender/cache"
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/model"
 	"github.com/robfig/cron/v3"
@@ -15,11 +16,12 @@ import (
 )
 
 type SentMessageTaskRunner struct {
-	cron                  *cron.Cron
-	ctx                   context.Context
-	cfg                   *viper.Viper
-	messageTaskRepository db.MessageTaskRepository
-	taskStateRepository   db.TaskStateRepository
+	cron                   *cron.Cron
+	ctx                    context.Context
+	cfg                    *viper.Viper
+	messageTaskRepository  db.MessageTaskRepository
+	taskStateRepository    db.TaskStateRepository
+	messageTaskResultCache cache.Cache[model.MessageTaskResult]
 }
 
 func NewSentMessageTaskRunner(
@@ -27,14 +29,16 @@ func NewSentMessageTaskRunner(
 	cfg *viper.Viper,
 	messageTaskRepository db.MessageTaskRepository,
 	taskStateRepository db.TaskStateRepository,
+	messageTaskResultCache cache.Cache[model.MessageTaskResult],
 ) *SentMessageTaskRunner {
 	c := cron.New(cron.WithSeconds())
 	return &SentMessageTaskRunner{
-		cron:                  c,
-		ctx:                   ctx,
-		cfg:                   cfg,
-		messageTaskRepository: messageTaskRepository,
-		taskStateRepository:   taskStateRepository,
+		cron:                   c,
+		ctx:                    ctx,
+		cfg:                    cfg,
+		messageTaskRepository:  messageTaskRepository,
+		taskStateRepository:    taskStateRepository,
+		messageTaskResultCache: messageTaskResultCache,
 	}
 }
 
@@ -60,7 +64,7 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 		}
 
 		if !shouldRunTask(taskState.LastSuccessfulQueryTime, deltaMin) {
-			log.Info().Msg("delta not in past. task waiting next step...")
+			log.Info().Msg("delta not in past. tasks waiting next turn...")
 			return
 		}
 
@@ -77,7 +81,7 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 		for _, task := range tasks {
 			task := task // Create a new instance for the goroutine
 			g.Go(func() error {
-				err := invokeTask(ctx, s.cfg, task, retryCount)
+				err := invokeTask(ctx, s.cfg, task, retryCount, s.messageTaskResultCache)
 				if err != nil {
 					err := s.messageTaskRepository.UpdateStatus(ctx, strconv.FormatUint(uint64(task.ID), 10), model.FAILED)
 					if err != nil {
@@ -120,15 +124,25 @@ func (s *SentMessageTaskRunner) Run(ctx context.Context) error {
 	return nil
 }
 
-func invokeTask(ctx context.Context, cfg *viper.Viper, messageTask *model.MessageTask, retryCount int) error {
+func invokeTask(
+	ctx context.Context,
+	cfg *viper.Viper,
+	messageTask *model.MessageTask,
+	retryCount int,
+	messageTaskResultCache cache.Cache[model.MessageTaskResult],
+) error {
 	for i := 0; i <= retryCount; i++ {
 		log.Info().Msgf("Invoking task %d, attempt %d\n", messageTask.ID, i+1)
-		// Simulate task invocation
-		time.Sleep(1 * time.Second) // Simulate task duration
+		currentTime := time.Now()
 
-		// Simulate task success or failure
-		err := runMessageTask(ctx, cfg, *messageTask)
+		resp, err := runMessageTask(ctx, cfg, *messageTask)
 		if err == nil {
+			taskIDStr := strconv.FormatUint(uint64(messageTask.ID), 10)
+			messageTaskResultCache.Set(ctx, taskIDStr, model.MessageTaskResult{
+				TaskID:      taskIDStr,
+				MessageID:   resp.MessageId,
+				SendingTime: currentTime,
+			})
 			return nil
 		}
 

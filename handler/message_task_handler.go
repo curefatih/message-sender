@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/curefatih/message-sender/cache"
 	"github.com/curefatih/message-sender/db"
 	"github.com/curefatih/message-sender/model"
 	"github.com/curefatih/message-sender/model/dto"
@@ -13,16 +14,18 @@ import (
 )
 
 type MessageTaskHandler struct {
-	ctx        context.Context
-	cfg        *viper.Viper
-	repository db.MessageTaskRepository
+	ctx                    context.Context
+	cfg                    *viper.Viper
+	repository             db.MessageTaskRepository
+	messageTaskResultCache cache.Cache[model.MessageTaskResult]
 }
 
-func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.MessageTaskRepository) *MessageTaskHandler {
+func NewMessageTaskHandler(ctx context.Context, cfg *viper.Viper, repository db.MessageTaskRepository, messageTaskResultCache cache.Cache[model.MessageTaskResult]) *MessageTaskHandler {
 	return &MessageTaskHandler{
-		ctx:        ctx,
-		cfg:        cfg,
-		repository: repository,
+		ctx:                    ctx,
+		cfg:                    cfg,
+		repository:             repository,
+		messageTaskResultCache: messageTaskResultCache,
 	}
 }
 
@@ -128,5 +131,36 @@ func (mth *MessageTaskHandler) GetMessagesWithPagination(ctx *gin.Context) {
 		Page:     pageQuery.Page,
 		PageSize: pageQuery.PageSize,
 		Data:     res,
+	})
+}
+
+// @BasePath /api/v1
+// DeleteMessageTask godoc
+// @Summary Deletes Message Task
+// @Schemes
+// @Description Deletes message task that will
+// @Tags Message Task
+// @Accept json
+// @Produce json
+// @Param status query  object  true  "COMPLETED"
+// @Success 200 {object} dto.PageResponse[model.MessageTask]
+// @Router /api/v1/tasks/messages [get]
+func (mth *MessageTaskHandler) GetMessageTaskResult(ctx *gin.Context) {
+	messageTaskID := ctx.Param("id")
+
+	res, err := mth.messageTaskResultCache.Get(ctx.Request.Context(), messageTaskID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"message": "result couldn't find in cache",
+		})
+		return
+	}
+
+	fmt.Println("got res", res)
+
+	ctx.JSON(http.StatusOK, model.MessageTaskResult{
+		TaskID:      messageTaskID,
+		MessageID:   res.MessageID,
+		SendingTime: res.SendingTime,
 	})
 }
