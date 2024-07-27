@@ -2,7 +2,7 @@ package cache
 
 import "context"
 
-type Cache interface {
-	Get(ctx context.Context, key string) error
-	Set(ctx context.Context, key, value string) error
+type Cache[T any] interface {
+	Get(ctx context.Context, key string) (*T, error)
+	Set(ctx context.Context, key string, value T) error
 }
