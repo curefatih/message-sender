@@ -1,6 +1,6 @@
 <h1 align="center">📬 message-sender</h1>
 
-A basic Message sender is an app that tries to send X messages for every N minute.
+A basic message sender is an app that tries to send X messages for every N minute.
 
 ## Run
 
